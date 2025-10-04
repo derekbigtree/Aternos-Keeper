@@ -171,38 +171,6 @@ function createBot() {
     }, 2000);
   });
 
-  bot.on('chat', (username, message) => {
-    if (username === bot.username) return;
-    log(`<${username}> ${message}`);
-    
-    const msg = message.toLowerCase();
-    
-    if (msg === '!help') {
-      bot.chat('Commands: !status !ping !uptime !players');
-    }
-    if (msg === '!status') {
-      const up = Math.floor(process.uptime() / 60);
-      bot.chat(`Online for ${up} minutes. Players: ${Object.keys(bot.players).length}`);
-    }
-    if (msg === '!ping') {
-      bot.chat('Pong! Bot is alive.');
-    }
-    if (msg === '!uptime') {
-      const up = Math.floor(process.uptime());
-      const h = Math.floor(up / 3600);
-      const m = Math.floor((up % 3600) / 60);
-      bot.chat(`Uptime: ${h}h ${m}m`);
-    }
-    if (msg === '!players') {
-      const players = Object.keys(bot.players).filter(p => p !== bot.username);
-      bot.chat(players.length ? `Players: ${players.join(', ')}` : 'No players online');
-    }
-  });
-
-  bot.on('whisper', (username, message) => {
-    log(`[PM] ${username}: ${message}`);
-  });
-
   // Anti-AFK: Random look around
   bot.on('physicsTick', () => {
     if (bot.time.age % 600 === 0) {
