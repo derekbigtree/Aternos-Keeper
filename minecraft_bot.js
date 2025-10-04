@@ -1,5 +1,5 @@
 // ============================================
-// MINECRAFT KEEPALIVE BOT - RAILWAY READY
+// MINECRAFT KEEPALIVE BOT - CHAT DISABLED
 // ============================================
 
 const mineflayer = require('mineflayer');
@@ -98,7 +98,7 @@ app.get('/', (req, res) => {
       </head>
       <body>
         <div class="container">
-          <h1>🎮 Minecraft Bot</h1>
+          <h1>Minecraft Bot</h1>
           <div class="status ${bot ? 'pulse' : ''}">${status}</div>
           <div class="info">
             <span class="label">Server:</span>
@@ -120,7 +120,7 @@ app.get('/', (req, res) => {
             <span class="label">Players:</span>
             <span class="value">${players}</span>
           </div>
-          <div class="footer">Auto-refreshes every 10 seconds | Running on Railway</div>
+          <div class="footer">Auto-refreshes every 10 seconds | Running on Render</div>
         </div>
       </body>
     </html>
@@ -160,18 +160,18 @@ function createBot() {
     port: CONFIG.SERVER_PORT,
     username: CONFIG.BOT_USERNAME,
     version: CONFIG.MC_VERSION,
-    auth: 'offline'
+    auth: 'offline',
+    hideErrors: true
   });
 
-bot._client.on('chat', () => {});
-bot.removeAllListeners('chat');
+  // COMPLETELY DISABLE CHAT PARSING
+  bot._client.on('chat', () => {});
+  bot._client.on('system_chat', () => {});
+  bot._client.on('player_chat', () => {});
 
   bot.on('spawn', () => {
     log('✓ Bot connected and spawned!');
     reconnectAttempts = 0;
-    setTimeout(() => {
-      if (bot) bot.chat('Keepalive bot active! Type !help');
-    }, 2000);
   });
 
   // Anti-AFK: Random look around
@@ -209,7 +209,7 @@ bot.removeAllListeners('chat');
 
 function reconnect() {
   reconnectAttempts++;
-  const delay = Math.min(reconnectAttempts * 10000, 60000); // Max 1 minute
+  const delay = Math.min(reconnectAttempts * 10000, 60000);
   log(`Reconnecting in ${delay/1000}s... (Attempt ${reconnectAttempts})`);
   setTimeout(createBot, delay);
 }
@@ -218,7 +218,7 @@ function reconnect() {
 // START
 // ============================================
 console.log('='.repeat(60));
-console.log('🎮 MINECRAFT KEEPALIVE BOT - RAILWAY EDITION');
+console.log('Minecraft Keepalive Bot - Chat Disabled');
 console.log('='.repeat(60));
 console.log(`Server: ${CONFIG.SERVER_HOST}:${CONFIG.SERVER_PORT}`);
 console.log(`Username: ${CONFIG.BOT_USERNAME}`);
@@ -227,21 +227,20 @@ console.log(`Web Port: ${CONFIG.WEB_PORT}`);
 console.log('='.repeat(60));
 
 if (CONFIG.SERVER_HOST === 'YourServer.aternos.me') {
-  console.log('\n⚠️  WARNING: Set SERVER_HOST environment variable on Railway!');
+  console.log('\n⚠️  WARNING: Set SERVER_HOST environment variable on Render!');
   console.log('Go to Variables tab and add your Aternos server address\n');
 }
 
 createBot();
 
-// Graceful shutdown
 process.on('SIGINT', () => {
-  console.log('\n👋 Shutting down...');
+  console.log('\nShutting down...');
   if (bot) bot.quit();
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  console.log('\n👋 Shutting down...');
+  console.log('\nShutting down...');
   if (bot) bot.quit();
   process.exit(0);
 });
