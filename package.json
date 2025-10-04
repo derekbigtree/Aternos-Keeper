@@ -1,0 +1,24 @@
+{
+  "name": "Bot",
+  "version": "1.0.0",
+  "description": "Aternos 24/7 Bot",
+  "main": "minecraft_bot.js",
+  "scripts": {
+    "start": "node minecraft_bot.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mineflayer": "4.11.1"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "keywords": [
+    "minecraft",
+    "bot",
+    "aternos",
+    "keepalive"
+  ],
+  "author": "",
+  "license": "MIT"
+}
