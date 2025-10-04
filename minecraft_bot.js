@@ -161,7 +161,6 @@ function createBot() {
     username: CONFIG.BOT_USERNAME,
     version: CONFIG.MC_VERSION,
     auth: 'offline'
-    hideErrors: true,
   });
 
 bot._client.on('chat', () => {});
