@@ -161,7 +161,11 @@ function createBot() {
     username: CONFIG.BOT_USERNAME,
     version: CONFIG.MC_VERSION,
     auth: 'offline'
+    hideErrors: true
   });
+
+bot._client.on('chat', () => {});
+bot.removeAllListeners('chat');
 
   bot.on('spawn', () => {
     log('✓ Bot connected and spawned!');
