@@ -1,13 +1,6 @@
-// ============================================
-// MINECRAFT KEEPALIVE BOT - CHAT DISABLED
-// ============================================
-
 const mineflayer = require('mineflayer');
 const express = require('express');
 
-// ============================================
-// CONFIGURATION
-// ============================================
 const CONFIG = {
   SERVER_HOST: process.env.SERVER_HOST || 'ThatLifeStealSMP.aternos.me',
   SERVER_PORT: parseInt(process.env.SERVER_PORT) || 11827,
@@ -16,165 +9,82 @@ const CONFIG = {
   WEB_PORT: process.env.PORT || 3000
 };
 
-// ============================================
-// WEB SERVER (Status Page)
-// ============================================
+// Patch mineflayer to disable chat plugin
+const originalCreateBot = mineflayer.createBot;
+mineflayer.createBot = function(options) {
+  const bot = originalCreateBot(options);
+  
+  // Remove chat plugin completely
+  if (bot.chat) {
+    bot.chat = () => {};
+  }
+  
+  // Suppress all chat-related errors
+  bot._client.on('error', (err) => {
+    if (err.message && err.message.includes('chat')) {
+      console.log('Suppressed chat error');
+      return;
+    }
+    bot.emit('error', err);
+  });
+  
+  return bot;
+};
+
+// Web server code (same as before)
 const app = express();
+let bot = null;
 
 app.get('/', (req, res) => {
   const status = bot ? 'Connected ✓' : 'Disconnected ✗';
   const uptime = Math.floor(process.uptime());
   const hours = Math.floor(uptime / 3600);
   const minutes = Math.floor((uptime % 3600) / 60);
-  const players = bot ? Object.keys(bot.players).length : 0;
   
   res.send(`
     <!DOCTYPE html>
     <html>
       <head>
-        <title>Minecraft Bot Status</title>
+        <title>Bot Status</title>
         <meta http-equiv="refresh" content="10">
         <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { 
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-          }
-          .container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 50px;
-            max-width: 600px;
-            width: 100%;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-          }
-          h1 { 
-            font-size: 48px; 
-            margin-bottom: 30px;
-            text-align: center;
-          }
-          .status { 
-            font-size: 36px; 
-            margin: 30px 0;
-            text-align: center;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            color: ${bot ? '#4CAF50' : '#f44336'};
-            font-weight: bold;
-          }
-          .info { 
-            font-size: 18px; 
-            margin: 15px 0;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-          }
-          .label { opacity: 0.8; }
-          .value { font-weight: bold; }
-          .footer {
-            margin-top: 30px;
-            text-align: center;
-            opacity: 0.6;
-            font-size: 14px;
-          }
-          .pulse {
-            animation: pulse 2s infinite;
-          }
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-          }
+          body { font-family: Arial; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; padding: 50px; }
+          .status { font-size: 48px; margin: 30px; }
         </style>
       </head>
       <body>
-        <div class="container">
-          <h1>Minecraft Bot</h1>
-          <div class="status ${bot ? 'pulse' : ''}">${status}</div>
-          <div class="info">
-            <span class="label">Server:</span>
-            <span class="value">${CONFIG.SERVER_HOST}</span>
-          </div>
-          <div class="info">
-            <span class="label">Username:</span>
-            <span class="value">${CONFIG.BOT_USERNAME}</span>
-          </div>
-          <div class="info">
-            <span class="label">Uptime:</span>
-            <span class="value">${hours}h ${minutes}m</span>
-          </div>
-          <div class="info">
-            <span class="label">Version:</span>
-            <span class="value">${CONFIG.MC_VERSION}</span>
-          </div>
-          <div class="info">
-            <span class="label">Players:</span>
-            <span class="value">${players}</span>
-          </div>
-          <div class="footer">Auto-refreshes every 10 seconds | Running on Render</div>
-        </div>
+        <h1>Minecraft Keepalive Bot</h1>
+        <div class="status">${status}</div>
+        <p>Server: ${CONFIG.SERVER_HOST}</p>
+        <p>Uptime: ${hours}h ${minutes}m</p>
       </body>
     </html>
   `);
 });
 
-app.get('/status', (req, res) => {
-  res.json({
-    connected: bot ? true : false,
-    server: CONFIG.SERVER_HOST,
-    username: CONFIG.BOT_USERNAME,
-    uptime: process.uptime(),
-    players: bot ? Object.keys(bot.players).length : 0,
-    timestamp: new Date().toISOString()
-  });
+app.listen(CONFIG.WEB_PORT, () => {
+  console.log(`Web server on port ${CONFIG.WEB_PORT}`);
 });
 
-app.listen(CONFIG.WEB_PORT, '0.0.0.0', () => {
-  console.log(`✓ Web server running on port ${CONFIG.WEB_PORT}`);
-});
-
-// ============================================
-// MINECRAFT BOT
-// ============================================
-let bot = null;
+// Bot creation
 let reconnectAttempts = 0;
 
-function log(message) {
-  console.log(`[${new Date().toLocaleTimeString()}] ${message}`);
-}
-
 function createBot() {
-  log('Creating bot...');
+  console.log('Creating bot...');
   
   bot = mineflayer.createBot({
     host: CONFIG.SERVER_HOST,
     port: CONFIG.SERVER_PORT,
     username: CONFIG.BOT_USERNAME,
     version: CONFIG.MC_VERSION,
-    auth: 'offline',
-    hideErrors: true
+    auth: 'offline'
   });
 
-  // COMPLETELY DISABLE CHAT PARSING
-  bot._client.on('chat', () => {});
-  bot._client.on('system_chat', () => {});
-  bot._client.on('player_chat', () => {});
-
   bot.on('spawn', () => {
-    log('✓ Bot connected and spawned!');
+    console.log('Bot spawned successfully');
     reconnectAttempts = 0;
   });
 
-  // Anti-AFK: Random look around
   bot.on('physicsTick', () => {
     if (bot.time.age % 600 === 0) {
       bot.look(Math.random() * Math.PI * 2, (Math.random() - 0.5) * Math.PI);
@@ -182,65 +92,31 @@ function createBot() {
   });
 
   bot.on('kicked', (reason) => {
-    log(`✗ Kicked: ${reason}`);
+    console.log(`Kicked: ${reason}`);
     bot = null;
     reconnect();
   });
 
   bot.on('error', (err) => {
-    log(`✗ Error: ${err.message}`);
+    if (err.message && err.message.includes('chat')) {
+      console.log('Chat error suppressed, bot staying connected');
+      return;
+    }
+    console.log(`Error: ${err.message}`);
     bot = null;
     reconnect();
   });
 
   bot.on('end', () => {
-    log('✗ Disconnected');
+    console.log('Disconnected');
     bot = null;
     reconnect();
-  });
-
-  bot.on('health', () => {
-    if (bot && bot.health <= 0) {
-      log('⚠ Died! Respawning...');
-      bot.chat('/respawn');
-    }
   });
 }
 
 function reconnect() {
   reconnectAttempts++;
-  const delay = Math.min(reconnectAttempts * 10000, 60000);
-  log(`Reconnecting in ${delay/1000}s... (Attempt ${reconnectAttempts})`);
-  setTimeout(createBot, delay);
-}
-
-// ============================================
-// START
-// ============================================
-console.log('='.repeat(60));
-console.log('Minecraft Keepalive Bot - Chat Disabled');
-console.log('='.repeat(60));
-console.log(`Server: ${CONFIG.SERVER_HOST}:${CONFIG.SERVER_PORT}`);
-console.log(`Username: ${CONFIG.BOT_USERNAME}`);
-console.log(`Version: ${CONFIG.MC_VERSION}`);
-console.log(`Web Port: ${CONFIG.WEB_PORT}`);
-console.log('='.repeat(60));
-
-if (CONFIG.SERVER_HOST === 'YourServer.aternos.me') {
-  console.log('\n⚠️  WARNING: Set SERVER_HOST environment variable on Render!');
-  console.log('Go to Variables tab and add your Aternos server address\n');
+  setTimeout(createBot, 10000);
 }
 
 createBot();
-
-process.on('SIGINT', () => {
-  console.log('\nShutting down...');
-  if (bot) bot.quit();
-  process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-  console.log('\nShutting down...');
-  if (bot) bot.quit();
-  process.exit(0);
-});
