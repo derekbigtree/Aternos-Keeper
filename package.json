@@ -1,24 +1,16 @@
 {
-  "name": "Bot",
+  "name": "aternos-autostart",
   "version": "1.0.0",
-  "description": "Aternos 24/7 Bot",
-  "main": "minecraft_bot.js",
+  "description": "Auto-starts Aternos server",
+  "main": "aternos-starter.js",
   "scripts": {
-    "start": "node minecraft_bot.js"
+    "start": "node aternos-starter.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "mineflayer": "^4.8.1"
+    "aternos-api": "^2.0.0"
   },
   "engines": {
     "node": "20.x"
-  },
-  "keywords": [
-    "minecraft",
-    "bot",
-    "aternos",
-    "keepalive"
-  ],
-  "author": "",
-  "license": "MIT"
+  }
 }
